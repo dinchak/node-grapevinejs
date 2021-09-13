@@ -3,7 +3,7 @@
  * 
  * See {@link https://grapevine.haus Grapevine} for more information.
  *
- * {@link https://github.com/dinchak/node-grapevine Repository}
+ * {@link https://github.com/dinchak/node-grapevinejs Repository}
  * 
  * @author Tom Dinchak <dinchak@gmail.com>
  */
@@ -103,7 +103,7 @@ let refs = {}
  * @param {Object} setConfig Configuration object, client_id and client_secret are required
  * @returns {EventEmitter} EventEmitter for async message handling
  */
-function init(setConfig) {
+function init (setConfig) {
   config = setConfig || {}
 
   if (config.hasOwnProperty('url')) {
@@ -128,7 +128,7 @@ function init(setConfig) {
  * 
  * @returns {Promise} Resolves after grapevine authentication
  */
-function connect() {
+function connect () {
   return new Promise((resolve, reject) => {
     if (alive) {
       reject(new Error('Attempted to connect() with active connection, call .close() first'))
@@ -165,7 +165,7 @@ function connect() {
         }, statusWait)
       } catch (err) {
         scheduleReconnect(5)
-        reject(err)
+        emitter.emit('error', err)
       }
     })
 
@@ -197,7 +197,7 @@ function connect() {
  * Schedule a reconnect attempt.  Receiving a heartbeat message will reset
  * the timer.
  */
-function scheduleReconnect(seconds) {
+function scheduleReconnect (seconds) {
   debug('will reconnect in ' + seconds + ' seconds')
   if (reconnectInterval) {
     clearTimeout(reconnectInterval)
@@ -218,7 +218,7 @@ function scheduleReconnect(seconds) {
 /**
  * Closes the websocket connection
  */
-async function close() {
+async function close () {
   try {
     alive = false
     conn.close()
@@ -237,7 +237,7 @@ async function close() {
  * @param {boolean} ref true if a ref should be generated and included (defaults true)
  * @returns {Promise} Resolves the payload object after receiving an acknowledgement
  */
-function send(event, payload, ref = true) {
+function send (event, payload, ref = true) {
   return new Promise((resolve, reject) => {
     let packet = {event, payload}
 
@@ -275,7 +275,7 @@ function send(event, payload, ref = true) {
  * 
  * @param {Object} msg {event, payload, ref, status, error}
  */
-async function messageHandler(msg) {
+async function messageHandler (msg) {
   let payload = {}
 
   if (msg.ref) {
@@ -316,7 +316,7 @@ async function messageHandler(msg) {
   if (msg.event == 'heartbeat') {
     alive = true
     scheduleReconnect(20)
-    await send('heartbeat', {players}, false)
+    await send('heartbeat', { players }, false)
   }
 
   if (msg.event == 'authenticate') {
@@ -340,7 +340,7 @@ async function messageHandler(msg) {
   if (msg.event == 'games/status') {
     let game = games.find(g => g.game == msg.payload.game)
     if (!game) {
-      games.push(Object.assign({connected: true}, msg.payload))
+      games.push(Object.assign({ connected: true }, msg.payload))
     } else {
       for (let key in msg.payload) {
         game[key] = msg.payload[key]
@@ -419,11 +419,11 @@ async function messageHandler(msg) {
  * @param {string} name The player name
  * @returns {Promise} Resolves when the user is registered on grapevine
  */
-function addPlayer(name) {
+function addPlayer (name) {
   if (!players.includes(name)) {
     players.push(name)
   }
-  return send('players/sign-in', {name})
+  return send('players/sign-in', { name })
 }
 
 /**
@@ -432,9 +432,9 @@ function addPlayer(name) {
  * @param {string} name The player name
  * @returns {Promise} Resolves when the user is removed from grapevine
  */
-function removePlayer(name) {
+function removePlayer (name) {
   players = players.filter(n => n != name)
-  return send('players/sign-out', {name})
+  return send('players/sign-out', { name })
 }
 
 /**
@@ -444,7 +444,7 @@ function removePlayer(name) {
  * @param {string} remoteName A player-entered remote player identifier
  * @returns {Object} An object representing the remote player
  */
-function findPlayer(remoteName) {
+function findPlayer (remoteName) {
   let [playerName, gameName] = remoteName.split('@')
 
   let game = games.find(g => g.game.toLowerCase() == gameName.toLowerCase())
@@ -457,7 +457,7 @@ function findPlayer(remoteName) {
     return false
   }
 
-  return {game: game.game, name}
+  return { game: game.game, name }
 }
 
 /**
